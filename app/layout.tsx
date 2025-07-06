@@ -9,8 +9,8 @@ import { WrongNetworkAlert } from "@/components/WrongNetworkAlert";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  applicationName: "Lango",
-  title: "NextJS Boilerplate Template",
+  applicationName: "AgentForge",
+  title: "AgentForge",
   description: "Aptos Boilerplate Template",
   manifest: "/manifest.json",
 };
