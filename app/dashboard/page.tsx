@@ -8,11 +8,36 @@ import { useEffect, useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { useWallet } from "@aptos-labs/wallet-adapter-react"
 import { add } from "date-fns"
+import axios from "axios"
+import { useRouter } from "next/navigation"
 
 export default function Dashboard() {
 
   const [activeView, setActiveView] = useState<"home" | "create" | "my-agents">("home")
 
+  const router = useRouter()
+
+  useEffect(() => {
+    const user_id = localStorage.getItem('user_id')
+    const wallet_address = localStorage.getItem('wallet_address')
+
+    if (!user_id || !wallet_address) {
+      router.push('/')
+      return
+    }
+
+    async function connectToAgent(userId: string) {
+      const { data } = await axios.post('https://aptos-agent.onrender.com/query', {
+        user_id: userId,
+        input: `my wallet address is ${wallet_address}`
+      })
+
+      console.log(data)
+    }
+
+    connectToAgent(user_id)
+
+  }, [])
 
   return (
     <div className="min-h-screen relative overflow-hidden">
