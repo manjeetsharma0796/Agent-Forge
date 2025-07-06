@@ -1,5 +1,5 @@
 "use client"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Wallet, ChevronDown, RefreshCw, Sparkles, Zap } from "lucide-react"
 import { WalletSelector } from "./WalletSelector"
 import { useState, useEffect, useRef } from "react"
@@ -8,8 +8,7 @@ import { useWallet } from "@aptos-labs/wallet-adapter-react"
 import { aptosClient } from "@/app/utils/aptosClient"
 import { ForgeABI } from "@/app/utils/ai"
 import { toast } from "../components/ui/use-toast"
-import { useWalletClient } from "@thalalabs/surf/hooks";
-import { min } from "date-fns"
+import { useWalletClient } from "@thalalabs/surf/hooks"
 
 export function Navbar() {
   const { account, connected } = useWallet()
@@ -19,13 +18,12 @@ export function Navbar() {
   const [claiming, setClaiming] = useState(false)
   const [hoveredLink, setHoveredLink] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const { client } = useWalletClient()
+  const address = "0x5a5d125b5d1c3b57cc8b0901196139bff53c53d7d27dc8c27edea4190fa7f381"
 
   // Initialize Aptos client
   const config = new AptosConfig({ network: Network.TESTNET })
   const aptos = new Aptos(config)
-
-  const { client } = useWalletClient();
-  const address = "0x5a5d125b5d1c3b57cc8b0901196139bff53c53d7d27dc8c27edea4190fa7f381";
 
   const mintInititate = async () => {
     console.log("Minting initiated for address:", address);
@@ -66,7 +64,6 @@ export function Navbar() {
     try {
       setLoading(true)
       const coinType = "0x1::aptos_coin::AptosCoin"
-
       const [balanceStr] = await aptos.view<[string]>({
         payload: {
           function: "0x1::coin::balance",
@@ -74,11 +71,9 @@ export function Navbar() {
           functionArguments: [address],
         },
       })
-
       // Convert from octas to APT (1 APT = 100,000,000 octas)
       const balanceInOctas = Number.parseInt(balanceStr, 10)
       const balanceInApt = balanceInOctas / 100_000_000
-
       setBalance(balanceInApt)
     } catch (error) {
       console.error("Error fetching balance:", error)
@@ -90,11 +85,9 @@ export function Navbar() {
 
   const claimTokens = async () => {
     if (!account?.address) return
-
     try {
       setClaiming(true)
       await new Promise((resolve) => setTimeout(resolve, 2000)) // Simulate API call
-
       // Refresh balance after claiming
       await fetchBalance(account.address.toString())
       setShowBalanceDropdown(false)
@@ -121,7 +114,6 @@ export function Navbar() {
         setShowBalanceDropdown(false)
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside)
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
@@ -152,7 +144,7 @@ export function Navbar() {
         }}
         transition={{
           duration: 4,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           ease: "easeInOut",
         }}
       />
@@ -173,17 +165,13 @@ export function Navbar() {
           <div className="flex items-center justify-between w-full">
             {/* Enhanced Logo */}
             <motion.div
-              whileHover={{ 
+              whileHover={{
                 scale: 1.05,
                 textShadow: "0 0 20px rgba(236, 72, 153, 0.8)",
               }}
               className="text-pink-400 font-bold text-2xl cursor-pointer flex-shrink-0 relative"
             >
-              <motion.div
-                className="flex items-center space-x-2"
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div className="flex items-center space-x-2" whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
                 <Sparkles className="w-6 h-6 text-pink-400" />
                 <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                   AgentForge
@@ -200,7 +188,7 @@ export function Navbar() {
                   className="relative px-4 py-2 text-white/80 hover:text-pink-400 transition-colors cursor-pointer whitespace-nowrap rounded-lg"
                   onMouseEnter={() => setHoveredLink(link.name)}
                   onMouseLeave={() => setHoveredLink(null)}
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.05,
                     y: -2,
                   }}
@@ -221,95 +209,92 @@ export function Navbar() {
               ))}
             </div>
 
-            {/* Enhanced Wallet Section */}
+            {/* Enhanced Wallet Section - All buttons side by side */}
             <div className="flex items-center space-x-3 flex-shrink-0">
               {/* Enhanced Balance Display */}
               {connected && account?.address && (
-                <div className="relative" ref={dropdownRef}>
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    whileHover={{ 
-                      scale: 1.02,
-                      boxShadow: "0 10px 25px -5px rgba(236, 72, 153, 0.3)",
-                    }}
-                    onClick={() => setShowBalanceDropdown(!showBalanceDropdown)}
-                    className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-sm rounded-xl px-5 py-3 border border-pink-500/30 cursor-pointer hover:from-pink-500/30 hover:to-purple-500/30 transition-all duration-300 shadow-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <motion.div
-                        animate={{ rotate: loading ? 360 : 0 }}
-                        transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
-                      >
-                        <Wallet className="w-5 h-5 text-pink-400" />
-                      </motion.div>
-                      <span className="text-white/90 text-sm font-medium whitespace-nowrap">
-                        {loading ? (
-                          <motion.span 
-                            className="flex items-center space-x-1"
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 10px 25px -5px rgba(236, 72, 153, 0.3)",
+                  }}
+                  onClick={() => setShowBalanceDropdown(!showBalanceDropdown)}
+                  className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-sm rounded-xl px-5 py-3 border border-pink-500/30 cursor-pointer hover:from-pink-500/30 hover:to-purple-500/30 transition-all duration-300 shadow-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <motion.div
+                      animate={{ rotate: loading ? 360 : 0 }}
+                      transition={{ duration: 1, repeat: loading ? Number.POSITIVE_INFINITY : 0, ease: "linear" }}
+                    >
+                      <Wallet className="w-5 h-5 text-pink-400" />
+                    </motion.div>
+                    <span className="text-white/90 text-sm font-medium whitespace-nowrap">
+                      {loading ? (
+                        <motion.span
+                          className="flex items-center space-x-1"
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+                        >
+                          <span>Loading</span>
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, delay: 0.5 }}
                           >
-                            <span>Loading</span>
-                            <motion.span
-                              animate={{ opacity: [0, 1, 0] }}
-                              transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-                            >
-                              ...
-                            </motion.span>
+                            ...
                           </motion.span>
-                        ) : balance !== null ? (
-                          <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent font-semibold">
-                            {balance.toFixed(4)} APT
-                          </span>
-                        ) : (
-                          <span className="text-red-400">Error</span>
-                        )}
-                      </span>
-                      <motion.div
-                        animate={{ rotate: showBalanceDropdown ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <ChevronDown className="w-4 h-4 text-pink-400" />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-
-                  {/* Enhanced Claim Button */}
-                  <motion.button
-                    onClick={mintInititate}
-                    disabled={claiming}
-                    className="mt-2 w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: claiming ? 1 : 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      {claiming ? (
-                        <>
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                          </motion.div>
-                          <span>Claiming...</span>
-                        </>
+                        </motion.span>
+                      ) : balance !== null ? (
+                        <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent font-semibold">
+                          {balance.toFixed(4)} APT
+                        </span>
                       ) : (
-                        <>
-                          <Zap className="w-4 h-4" />
-                          <span>Claim 10 AGT</span>
-                        </>
+                        <span className="text-red-400">Error</span>
                       )}
-                    </div>
-                  </motion.button>
-                </div>
+                    </span>
+                    <motion.div animate={{ rotate: showBalanceDropdown ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                      <ChevronDown className="w-4 h-4 text-pink-400" />
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Enhanced Claim Button - Now side by side */}
+              {connected && account?.address && (
+                <motion.button
+                  onClick={mintInititate}
+                  disabled={claiming}
+                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  whileHover={{ scale: claiming ? 1 : 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    {claiming ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </motion.div>
+                        <span>Claiming...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4" />
+                        <span>Claim 10 AGT</span>
+                      </>
+                    )}
+                  </div>
+                </motion.button>
               )}
 
               {/* Enhanced Refresh Button */}
               {connected && account?.address && (
                 <motion.button
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.05,
                     boxShadow: "0 10px 25px -5px rgba(236, 72, 153, 0.3)",
                   }}
@@ -321,7 +306,7 @@ export function Navbar() {
                 >
                   <motion.div
                     animate={{ rotate: loading ? 360 : 0 }}
-                    transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
+                    transition={{ duration: 1, repeat: loading ? Number.POSITIVE_INFINITY : 0, ease: "linear" }}
                   >
                     <RefreshCw className="w-5 h-5" />
                   </motion.div>
@@ -353,7 +338,7 @@ export function Navbar() {
               }}
               transition={{
                 duration: 3 + i * 0.5,
-                repeat: Infinity,
+                repeat: Number.POSITIVE_INFINITY,
                 ease: "easeInOut",
                 delay: i * 0.3,
               }}
