@@ -24,7 +24,7 @@ const plans = [
 	},
 	{
 		name: "Creator",
-		price: "0.1 ETH",
+		price: "0.1 AGT",
 		period: "per month",
 		description: "For serious Web3 builders",
 		features: [

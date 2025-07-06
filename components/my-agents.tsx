@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowLeft, Bot, Send, MessageCircle, User, X } from "lucide-react"
-import { useState } from "react"
-
+import { useState, useEffect } from "react"
 interface MyAgentsProps {
   onBack: () => void
 }
@@ -27,6 +26,11 @@ export function MyAgents({ onBack }: MyAgentsProps) {
   ])
   const [inputMessage, setInputMessage] = useState('')
 
+  // Run wallet sync logic once on mount (no useState)
+
+  // Only run once
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   // Single agent data
   const agent = {
     id: 1,
@@ -39,28 +43,51 @@ export function MyAgents({ onBack }: MyAgentsProps) {
     performance: "+23.5%",
   }
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
 
     const newMessage = {
       id: messages.length + 1,
       type: 'user',
       content: inputMessage
-    }
+    };
+    setMessages(prev => [...prev, newMessage]);
 
-    setMessages(prev => [...prev, newMessage])
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = {
-        id: messages.length + 2,
-        type: 'bot',
-        content: 'I\'m analyzing the blockchain data you requested. Let me fetch the latest information for you...'
+    // Send to backend
+    try {
+      const user_id = localStorage.getItem('user_id');
+      const res = await fetch('https://aptos-agent.onrender.com/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id, input: inputMessage })
+      });
+      const data = await res.json();
+      let botContent = '';
+      if (data && typeof data === 'object' && 'output' in data) {
+        botContent = data.output;
+      } else {
+        botContent = JSON.stringify(data, null, 2);
       }
-      setMessages(prev => [...prev, botResponse])
-    }, 1000)
-
-    setInputMessage('')
+      setMessages(prev => [
+        ...prev,
+        {
+          id: prev.length + 2,
+          type: 'bot',
+          content: botContent
+        }
+      ]);
+    } catch (e) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: prev.length + 2,
+          type: 'bot',
+          content: 'Error contacting AI agent.'
+        }
+      ]);
+    }
+    setInputMessage('');
   }
 
   const handleKeyPress = (e: { key: string }) => {
@@ -70,20 +97,47 @@ export function MyAgents({ onBack }: MyAgentsProps) {
   }
 
   if (selectedAgent) {
-    function handleQuickAction(label: string): void {
+    async function handleQuickAction(label: string): Promise<void> {
       setMessages(prev => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        type: 'user',
-        content: label,
-      },
-      {
-        id: prev.length + 2,
-        type: 'bot',
-        content: `You selected "${label}". This feature will be available soon!`,
-      },
+        ...prev,
+        {
+          id: prev.length + 1,
+          type: 'user',
+          content: label,
+        }
       ]);
+      try {
+        const user_id = localStorage.getItem('user_id');
+        const res = await fetch('https://aptos-agent.onrender.com/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id, input: label })
+        });
+        const data = await res.json();
+        let botContent = '';
+        if (data && typeof data === 'object' && 'output' in data) {
+          botContent = data.output;
+        } else {
+          botContent = JSON.stringify(data, null, 2);
+        }
+        setMessages(prev => [
+          ...prev,
+          {
+            id: prev.length + 1,
+            type: 'bot',
+            content: botContent
+          }
+        ]);
+      } catch (e) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: prev.length + 1,
+            type: 'bot',
+            content: 'Error contacting AI agent.'
+          }
+        ]);
+      }
     }
     return (
       <section className="py-8 px-4 md:px-8 min-h-screen">
@@ -93,15 +147,15 @@ export function MyAgents({ onBack }: MyAgentsProps) {
             <div className="w-80 bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 flex flex-col">
               {/* Header */}
               <div className="mb-6">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setSelectedAgent(null)} 
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedAgent(null)}
                   className="text-white hover:text-pink-400 mb-4 p-0"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Agents
                 </Button>
-                
+
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
                     <Bot className="w-5 h-5 text-white" />
@@ -189,24 +243,22 @@ export function MyAgents({ onBack }: MyAgentsProps) {
                   >
                     <div className={`flex items-start space-x-3 max-w-3xl ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                       {/* Avatar */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        message.type === 'user' 
-                          ? 'bg-gradient-to-br from-red-500 to-pink-600' 
-                          : 'bg-gradient-to-br from-blue-500 to-purple-600'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.type === 'user'
+                        ? 'bg-gradient-to-br from-red-500 to-pink-600'
+                        : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                        }`}>
                         {message.type === 'user' ? (
                           <User className="w-4 h-4 text-white" />
                         ) : (
                           <Bot className="w-4 h-4 text-white" />
                         )}
                       </div>
-                      
+
                       {/* Message Content */}
-                      <div className={`px-4 py-3 rounded-2xl ${
-                        message.type === 'user'
-                          ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
-                          : 'bg-slate-700/60 text-white border border-slate-600/40'
-                      }`}>
+                      <div className={`px-4 py-3 rounded-2xl ${message.type === 'user'
+                        ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
+                        : 'bg-slate-700/60 text-white border border-slate-600/40'
+                        }`}>
                         <p className="text-sm leading-relaxed">{message.content}</p>
                       </div>
                     </div>
@@ -268,7 +320,7 @@ export function MyAgents({ onBack }: MyAgentsProps) {
           whileHover={{ y: -5, scale: 1.02 }}
           className="max-w-md mx-auto"
         >
-          <Card 
+          <Card
             className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border-2 border-slate-700/50 hover:border-red-500/70 hover:shadow-xl hover:shadow-red-500/20 transition-all duration-500 cursor-pointer"
             onClick={() => setSelectedAgent(agent)}
           >

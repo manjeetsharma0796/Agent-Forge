@@ -45,10 +45,12 @@ import {
 } from "../components/ui/dropdown-menu";
 import { useToast } from "../components/ui/use-toast";
 
+
 export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
   const { account, connected, disconnect, wallet } = useWallet();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   const closeDialog = useCallback(() => setIsDialogOpen(false), []);
 
@@ -68,6 +70,35 @@ export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
       });
     }
   }, [account?.address, toast]);
+
+  // Custom connect handler
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      // 1. Get or create user_id
+      let userId = localStorage.getItem('user_id');
+      if (!userId) {
+        console.log("connectint to agent =====================")
+        const res = await fetch('https://aptos-agent.onrender.com/start', { method: 'POST' });
+        const data = await res.json();
+        if (data.user_id) {
+          userId = data.user_id;
+          localStorage.setItem('user_id', userId);
+        }
+
+       
+      }
+      // 2. Send wallet address to /query
+
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to connect wallet to agent.",
+      });
+    }
+    setConnecting(false);
+  };
 
   return connected ? (
     <DropdownMenu>
@@ -102,7 +133,9 @@ export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
   ) : (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button>Connect a Wallet</Button>
+        <Button onClick={handleConnect} disabled={connecting}>
+          {connecting ? 'Connecting...' : 'Connect a Wallet'}
+        </Button>
       </DialogTrigger>
       <ConnectWalletDialog close={closeDialog} {...walletSortingOptions} />
     </Dialog>

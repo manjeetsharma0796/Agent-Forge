@@ -7,8 +7,16 @@ import { HowItWorks } from "@/components/how-it-works"
 import { Features } from "@/components/features"
 import { Pricing } from "@/components/pricing"
 import { Footer } from "@/components/footer"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
+
 
 export default function Home() {
+  const { account, connected, disconnect, wallet } = useWallet();
+  console.log("Wallet connected:", connected, "Account:", account?.address.toString());
+  if (connected) {
+    localStorage.setItem("wallet_address", account?.address.toString());
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <CustomCursor />

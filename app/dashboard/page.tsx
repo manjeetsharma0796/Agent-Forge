@@ -4,11 +4,15 @@ import { DashboardHero } from "@/components/dashboard-hero"
 import { AgentOptions } from "@/components/agent-options"
 import { CreateAgent } from "@/components/create-agent"
 import { MyAgents } from "@/components/my-agents"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Navbar } from "@/components/navbar"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
+import { add } from "date-fns"
 
 export default function Dashboard() {
+
   const [activeView, setActiveView] = useState<"home" | "create" | "my-agents">("home")
+
 
   return (
     <div className="min-h-screen relative overflow-hidden">
