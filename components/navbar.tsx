@@ -133,7 +133,7 @@ export function Navbar() {
     { name: "Features", href: "#features" },
     { name: "Pricing", href: "#pricing" },
     { name: "My List", href: "#my-list" },
-    { name: "Public List", href: "#public-list" },
+    { name: "Public List", href: "/marketplace" },
   ]
 
   return (
