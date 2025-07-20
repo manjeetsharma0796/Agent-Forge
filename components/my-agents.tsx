@@ -25,11 +25,7 @@ export function MyAgents({ onBack }: MyAgentsProps) {
     { id: 1, type: 'bot', content: 'Hello! I\'m your On Chain Explorer agent. How can I help you explore blockchain data today?' },
   ])
   const [inputMessage, setInputMessage] = useState('')
-
-  // Run wallet sync logic once on mount (no useState)
-
-  // Only run once
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const [messageId, setMessageId] = useState(2)
 
   // Single agent data
   const agent = {
@@ -47,12 +43,11 @@ export function MyAgents({ onBack }: MyAgentsProps) {
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const newMessage = {
-      id: messages.length + 1,
-      type: 'user',
-      content: inputMessage
-    };
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prev => [
+      ...prev,
+      { id: messageId, type: 'user', content: inputMessage }
+    ]);
+    setMessageId(prev => prev + 1);
 
     // Send to backend
     try {
@@ -72,20 +67,22 @@ export function MyAgents({ onBack }: MyAgentsProps) {
       setMessages(prev => [
         ...prev,
         {
-          id: prev.length + 2,
+          id: messageId + 1,
           type: 'bot',
           content: botContent
         }
       ]);
+      setMessageId(prev => prev + 1);
     } catch (e) {
       setMessages(prev => [
         ...prev,
         {
-          id: prev.length + 2,
+          id: messageId + 1,
           type: 'bot',
           content: 'Error contacting AI agent.'
         }
       ]);
+      setMessageId(prev => prev + 1);
     }
     setInputMessage('');
   }
@@ -101,11 +98,12 @@ export function MyAgents({ onBack }: MyAgentsProps) {
       setMessages(prev => [
         ...prev,
         {
-          id: prev.length + 1,
+          id: messageId,
           type: 'user',
           content: label,
         }
       ]);
+      setMessageId(prev => prev + 1);
       try {
         const user_id = localStorage.getItem('user_id');
         const res = await fetch('https://aptos-agent.onrender.com/query', {
@@ -123,20 +121,22 @@ export function MyAgents({ onBack }: MyAgentsProps) {
         setMessages(prev => [
           ...prev,
           {
-            id: prev.length + 1,
+            id: messageId + 1,
             type: 'bot',
             content: botContent
           }
         ]);
+        setMessageId(prev => prev + 1);
       } catch (e) {
         setMessages(prev => [
           ...prev,
           {
-            id: prev.length + 1,
+            id: messageId + 1,
             type: 'bot',
             content: 'Error contacting AI agent.'
           }
         ]);
+        setMessageId(prev => prev + 1);
       }
     }
     return (
